@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Francis le Coq — Chicken Mines</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka+One&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+:root{
+  --bg1:#0d0520; --bg2:#1a0840;
+  --gold:#FFD700; --purple:#c084fc; --purple-d:#6d28d9;
+  --green:#16a34a; --green-l:#a3e635;
+  --orange:#d97706; --orange-l:#fcd34d;
+  --cyan:#0ea5e9;
+  --txt:#fff; --muted:#c9aaee;
+}
+html,body{height:100%}
+body{
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));
+  background-attachment:fixed;
+  font-family:'Fredoka One',cursive;
+  color:var(--txt);
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:-120px; left:50%; transform:translateX(-50%);
+  width:380px; height:380px; border-radius:50%;
+  background:radial-gradient(circle,rgba(120,40,200,0.35),transparent 70%);
+  pointer-events:none; z-index:0;
+}
+.app{width:100%; max-width:420px; position:relative; z-index:1; display:flex; flex-direction:column; align-items:center}
+
+/* HEADER */
+.brand{display:flex; flex-direction:column; align-items:center; margin-bottom:14px; margin-top:4px}
+.brand img{width:110px; height:110px; object-fit:contain; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)); animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1deg)}}
+.brand h1{
+  font-family:'Bangers',cursive; font-size:34px; letter-spacing:3px;
+  color:var(--gold); text-shadow:0 0 22px rgba(255,215,0,0.55),0 3px 0 rgba(0,0,0,0.35);
+  margin-top:4px; line-height:1; text-align:center;
+}
+.brand .tagline{font-size:11px; color:var(--muted); letter-spacing:1px; margin-top:3px}
+
+/* CARD */
+.card{
+  width:100%;
+  background:linear-gradient(145deg,rgba(13,5,32,0.95),rgba(30,10,65,0.95));
+  border:2px solid rgba(180,100,255,0.30);
+  border-radius:24px; padding:22px 18px;
+  box-shadow:0 0 50px rgba(120,40,200,0.35);
+}
+
+/* PLAYING FULLSCREEN */
+body.playing{padding:0; justify-content:flex-start}
+body.playing .brand{display:none}
+body.playing .app{max-width:480px}
+body.playing #screenGame.card{
+  border:none; border-radius:0; box-shadow:none; background:transparent;
+  padding:10px 10px calc(14px + env(safe-area-inset-bottom));
+  min-height:100vh; display:flex; flex-direction:column;
+}
+
+/* MENU BUTTONS */
+.menu-btn{
+  width:100%; padding:18px 18px; border:none; border-radius:16px;
+  font-family:'Bangers',cursive; font-size:22px; letter-spacing:2px;
+  color:#fff; cursor:pointer; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  touch-action:manipulation; transition:transform .12s,box-shadow .12s,opacity .12s;
+  position:relative; overflow:hidden;
+}
+.menu-btn:active{transform:scale(0.97)}
+.menu-btn .ico{font-size:24px; line-height:1}
+.menu-btn .lock{position:absolute; right:14px; display:flex; align-items:center; justify-content:center}
+.menu-btn .lock svg{width:22px; height:22px; display:block}
+#btnWallet{padding-right:44px; padding-top:12px; padding-bottom:12px; font-size:18px}
+.wallet-text{display:flex; flex-direction:column; align-items:center; line-height:1.1}
+.wallet-sub{font-family:'Fredoka One',cursive; font-size:10px; letter-spacing:0.5px; margin-top:3px; opacity:.95}
+.wallet-sub.ok{color:#bbf7d0}
+.wallet-sub.warn{color:#fde68a}
+
+.btn-comp-green{background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 5px 22px rgba(22,163,74,0.45)}
+.btn-comp-orange{background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 5px 22px rgba(217,119,6,0.40)}
+.btn-unique{background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 5px 22px rgba(22,163,74,0.45)}
+.btn-wallet{background:linear-gradient(135deg,#0ea5e9,#0284c7); box-shadow:0 5px 22px rgba(14,165,233,0.45)}
+.btn-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6); box-shadow:0 5px 22px rgba(124,58,237,0.45)}
+
+/* STATUS BAR */
+.status-bar{border-radius:14px; padding:12px 14px; margin-bottom:16px; font-size:12px; line-height:1.6; font-family:'Fredoka One',cursive}
+.status-bar.franc{background:rgba(22,163,74,0.15); border:1.5px solid rgba(163,230,53,0.5); color:#86efac}
+.status-bar.no-franc{background:rgba(217,119,6,0.10); border:1.5px solid rgba(217,119,6,0.4); color:var(--orange-l)}
+.status-bar b{color:var(--gold)}
+
+/* LANGUAGE FLAGS */
+.lang-row{display:flex; justify-content:center; gap:14px; margin-top:6px}
+.flag-btn{
+  width:66px; height:46px; border-radius:12px; cursor:pointer;
+  border:2px solid rgba(168,85,247,0.4); background:rgba(255,255,255,0.05);
+  display:flex; align-items:center; justify-content:center;
+  touch-action:manipulation; transition:transform .12s,border-color .12s; overflow:hidden;
+}
+.flag-btn:active{transform:scale(0.92)}
+.flag-btn.active{border-color:var(--gold); box-shadow:0 0 18px rgba(255,215,0,0.45)}
+.flag-btn svg{width:48px; height:32px; border-radius:4px; display:block}
+
+/* BACK BUTTON */
+.back-btn{
+  display:flex; align-items:center; gap:6px; width:100%;
+  background:rgba(109,40,217,0.2); border:1px solid rgba(168,85,247,0.4);
+  color:#a78bfa; font-size:14px; font-family:'Fredoka One',cursive;
+  cursor:pointer; margin-bottom:16px; padding:9px 14px; border-radius:10px;
+  touch-action:manipulation; transition:opacity .12s,transform .12s;
+}
+.back-btn:active{opacity:.7; transform:scale(0.98)}
+.back-btn::before{content:'←'; font-size:18px; font-weight:bold}
+
+/* SECTION TITLE */
+.sec-title{font-family:'Bangers',cursive; font-size:24px; letter-spacing:2px; color:var(--purple); text-align:center; margin-bottom:14px}
+.sec-sub{font-size:11px; color:var(--muted); text-align:center; margin-top:-8px; margin-bottom:16px; line-height:1.5}
+
+/* SCORES */
+.total-box{margin-top:12px; text-align:center; font-size:13px; color:var(--muted)}
+.total-box b{font-family:'Bangers',cursive; font-size:24px; color:var(--gold); letter-spacing:1px; display:block; margin-top:4px}
+
+/* LEVEL LIST */
+.lvl-btn{
+  width:100%; padding:15px 16px; border:none; border-radius:14px; margin-bottom:10px;
+  font-family:'Bangers',cursive; font-size:18px; letter-spacing:1.5px; color:#fff;
+  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  touch-action:manipulation; transition:transform .1s; position:relative;
+}
+.lvl-btn:active{transform:scale(0.97)}
+.lvl-btn .ll{display:flex; align-items:center; gap:10px; text-align:left}
+.lvl-btn .lvl-info{display:flex; flex-direction:column; gap:2px}
+.lvl-btn .lvl-name{font-size:17px; line-height:1}
+.lvl-btn .lvl-best{font-family:'Fredoka One',cursive; font-size:10px; letter-spacing:0; color:rgba(255,255,255,0.75)}
+.lvl-btn .stars{font-size:12px; letter-spacing:1px}
+.lvl-btn.unlocked{background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 4px 18px rgba(22,163,74,0.4)}
+.lvl-btn.lockedb{background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 4px 18px rgba(217,119,6,0.35)}
+.lvl-btn .lk{font-size:18px; display:flex}
+.lvl-btn .lk svg{width:20px;height:20px;display:block}
+.world-sep{font-family:'Bangers',cursive; font-size:13px; letter-spacing:1px; color:var(--purple); margin:14px 0 8px; text-align:left; opacity:.85}
+.world-sep:first-child{margin-top:0}
+
+/* GAME SCREEN */
+.game-top{display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:8px; gap:8px}
+.game-top .lvl-badge{font-family:'Bangers',cursive; letter-spacing:1px; font-size:15px; color:var(--gold); flex:1; text-align:center}
+.hud{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:100%; margin-bottom:10px}
+.hud .chip{
+  background:rgba(255,255,255,0.06); border:1px solid rgba(168,85,247,0.3);
+  border-radius:12px; padding:5px 12px; font-size:13px; display:flex; align-items:center; gap:6px;
+}
+.hud .chip .lab{font-size:9px; color:var(--muted); letter-spacing:.5px}
+.hud .chip .num{font-family:'Bangers',cursive; font-size:17px; letter-spacing:1px}
+.chip.foxes .num{color:#fb923c}
+.chip.time .num{color:var(--green-l)}
+.chip.best .num{color:var(--gold)}
+
+/* BOARD */
+.board-wrap{width:100%; display:flex; justify-content:center; flex:1; align-items:center}
+.board{
+  display:grid; gap:3px; padding:8px;
+  border:3px solid var(--purple-d); border-radius:16px;
+  box-shadow:0 0 30px rgba(120,40,200,0.4);
+  background:#1d0a3d; touch-action:none;
+}
+.cell{
+  position:relative; width:100%; aspect-ratio:1; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Bangers',cursive; letter-spacing:1px; line-height:1;
+  background:linear-gradient(145deg,#7c3aed,#5b21b6);
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.35);
+  cursor:pointer; overflow:hidden; transition:transform .08s;
+}
+.cell:active{transform:scale(0.93)}
+.cell.rev{
+  background:rgba(255,255,255,0.06); box-shadow:inset 0 0 0 1px rgba(168,85,247,0.18);
+  cursor:default; animation:cellpop .18s ease-out;
+}
+@keyframes cellpop{from{transform:scale(.82);opacity:.4}to{transform:scale(1);opacity:1}}
+.cell.rev:active{transform:none}
+.cell svg{width:78%; height:78%; display:block; pointer-events:none}
+.cell.flag{background:linear-gradient(145deg,#4c1d95,#3b0764)}
+.cell.fox{background:linear-gradient(145deg,#7f1d1d,#450a0a); box-shadow:inset 0 0 0 1px rgba(248,113,113,0.35)}
+.cell.boom{background:linear-gradient(145deg,#ef4444,#b91c1c); animation:shake .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px) rotate(-4deg)}40%{transform:translateX(4px) rotate(4deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.cell.wrong{background:linear-gradient(145deg,#334155,#1e293b); opacity:.8}
+.cell.wrong::after{
+  content:'✕'; position:absolute; font-size:60%; color:#fca5a5;
+  font-family:'Bangers',cursive; text-shadow:0 0 6px rgba(0,0,0,.6);
+}
+.cell.hint{animation:hintglow 1s ease-out}
+@keyframes hintglow{from{box-shadow:0 0 0 3px rgba(255,215,0,.9)}to{box-shadow:0 0 0 3px rgba(255,215,0,0)}}
+.n1{color:#7dd3fc}.n2{color:#a3e635}.n3{color:#fca5a5}.n4{color:#c084fc}
+.n5{color:#fbbf24}.n6{color:#2dd4bf}.n7{color:#f9a8d4}.n8{color:#e5e7eb}
+
+/* GAME BONUS BAR */
+.bonus-bar{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; width:100%; max-width:480px; margin:10px auto 0}
+.bonus-btn{
+  background:rgba(124,58,237,0.3); border:1.5px solid rgba(168,85,247,0.4);
+  border-radius:12px; padding:8px 14px; font-family:'Fredoka One',cursive; font-size:12px;
+  color:#fff; cursor:pointer; touch-action:manipulation; transition:transform .1s;
+}
+.bonus-btn:active{transform:scale(0.93)}
+.bonus-btn.used{opacity:.3; pointer-events:none}
+.bonus-btn.flagmode{background:rgba(239,68,68,0.35); border-color:rgba(252,165,165,0.7)}
+
+/* OVERLAYS / MODAL */
+.overlay{
+  position:fixed; inset:0; z-index:50; display:none;
+  align-items:center; justify-content:center; padding:24px;
+  background:rgba(5,2,15,0.82); backdrop-filter:blur(6px);
+}
+.overlay.show{display:flex; animation:fadein .25s}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%; max-width:340px; text-align:center;
+  background:linear-gradient(145deg,rgba(13,5,32,0.98),rgba(30,10,65,0.98));
+  border:2px solid rgba(180,100,255,0.4); border-radius:24px; padding:26px 22px;
+  box-shadow:0 0 60px rgba(120,40,200,0.5); animation:pop .3s cubic-bezier(.2,1.4,.5,1)
+}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.modal img{width:120px; height:120px; object-fit:contain; margin-bottom:10px; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6))}
+.modal h2{font-family:'Bangers',cursive; font-size:30px; letter-spacing:2px; margin-bottom:8px}
+.modal h2.win{color:var(--green-l); text-shadow:0 0 20px rgba(163,230,53,0.5)}
+.modal h2.lose{color:#fca5a5; text-shadow:0 0 20px rgba(239,68,68,0.4)}
+.modal h2.locked{color:var(--orange-l)}
+.modal p{font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:18px}
+.modal p b{color:var(--gold)}
+.modal .modal-score{font-family:'Bangers',cursive; font-size:26px; color:var(--green-l); margin:6px 0 14px; letter-spacing:1px}
+.modal .mbtn{
+  width:100%; padding:14px; border:none; border-radius:14px; margin-bottom:10px;
+  font-family:'Bangers',cursive; font-size:18px; letter-spacing:1px; color:#fff;
+  cursor:pointer; touch-action:manipulation; transition:transform .1s;
+}
+.modal .mbtn:active{transform:scale(0.96)}
+
+/* TOAST */
+.toast{
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:rgba(124,58,237,0.95); color:#fff; padding:12px 18px; border-radius:14px;
+  font-size:13px; z-index:70; opacity:0; transition:opacity .25s,transform .25s; max-width:90%;
+  text-align:center; box-shadow:0 6px 24px rgba(0,0,0,0.5); pointer-events:none; font-family:'Fredoka One',cursive;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="brand">
+    <img alt="Francis" id="brandImg" src="assets/coq_pilote.png">
+    <h1>FRANCIS<br>LE COQ</h1>
+    <div class="tagline" id="tagline">CHICKEN MINES</div>
+  </div>
+
+  <!-- MENU -->
+  <div class="card" id="screenMenu">
+    <button class="menu-btn btn-comp-green" onclick="show('screenLevels')">
+      <span class="ico">▶️</span><span id="lblResume">JOUER</span>
+    </button>
+    <button class="menu-btn btn-wallet" id="btnWallet" onclick="goConnectWallet()">
+      <span class="ico">👛</span>
+      <span class="wallet-text"><span id="lblWallet">CONNECT WALLET</span><span class="wallet-sub" id="walletSub"></span></span>
+      <span class="lock" id="walletLock"></span>
+    </button>
+    <div class="status-bar" id="statusBar"></div>
+    <div class="lang-row">
+      <button class="flag-btn" id="flagFR" onclick="setLang('fr')">
+        <svg viewBox="0 0 3 2"><rect width="1" height="2" x="0" fill="#0055A4"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#EF4135"/></svg>
+      </button>
+      <button class="flag-btn" id="flagEN" onclick="setLang('en')">
+        <svg viewBox="0 0 60 30"><clipPath id="ukc"><rect width="60" height="30"/></clipPath><g clip-path="url(#ukc)"><rect width="60" height="30" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/><path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/></g></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- LEVELS -->
+  <div class="card hidden" id="screenLevels">
+    <button class="back-btn" id="backLevels" onclick="show('screenMenu')">Retour</button>
+    <div class="sec-title">🗺️ <span id="levelsTitle">NIVEAUX</span></div>
+    <div class="sec-sub" id="levelsSub">Choisis ton niveau</div>
+    <div id="levelList"></div>
+    <div class="total-box"><span id="lblTotal">Score total</span><b id="totalScore">0</b></div>
+  </div>
+
+  <!-- GAME -->
+  <div class="card hidden" id="screenGame">
+    <div class="game-top">
+      <button class="back-btn" id="backGame" style="margin-bottom:0;width:auto;padding:8px 12px" onclick="quitGame()">Menu</button>
+      <span class="lvl-badge" id="gameLvl"></span>
+    </div>
+    <div class="hud" id="hud"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <div class="bonus-bar" id="bonusBar"></div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG = {
+  pilote:    "assets/coq_pilote.png",
+  coeur:     "assets/coq_coeur.png",
+  stupefait: "assets/coq_stupefait.png",
+  triste:    "assets/coq_triste.png"
+};
+'use strict';
+/* ============================================================
+   FRANCIS LE COQ — CHICKEN MINES (démineur)
+   Menu & design system reused from "Chicken Snake"
+   Les mines sont des RENARDS 🦊
+   ============================================================ */
+
+const tg = window.Telegram?.WebApp;
+const WALLET_PAGE = 'https://franclecoq.github.io/Wallet/connect-wallet.html';
+const BACKEND     = 'https://mubqtnqulpyehkgubhnh.supabase.co/functions/v1';
+
+/* ---------- Sprites (SVG inline — aucun asset renard n'existait) ---------- */
+const SVG_FOX = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <path d="M7 6 L28 23 L10 33 Z" fill="#d9541a"/>
+  <path d="M13 13 L25 24 L15 28 Z" fill="#ffc9a8"/>
+  <path d="M57 6 L36 23 L54 33 Z" fill="#d9541a"/>
+  <path d="M51 13 L39 24 L49 28 Z" fill="#ffc9a8"/>
+  <path d="M32 15 C48 15 57 25 57 35 C57 46 46 57 32 57 C18 57 7 46 7 35 C7 25 16 15 32 15 Z" fill="#f2762a"/>
+  <path d="M32 33 C23 33 15 39 15 44 C15 50 23 58 32 58 C41 58 49 50 49 44 C49 39 41 33 32 33 Z" fill="#fff4e8"/>
+  <ellipse cx="22.5" cy="33" rx="4.2" ry="4.7" fill="#2b1a12"/>
+  <ellipse cx="41.5" cy="33" rx="4.2" ry="4.7" fill="#2b1a12"/>
+  <circle cx="24" cy="31.2" r="1.5" fill="#fff"/>
+  <circle cx="43" cy="31.2" r="1.5" fill="#fff"/>
+  <path d="M32 47.5 C28.8 47.5 26.8 45.8 26.8 44.1 C26.8 42.8 28.8 42.1 32 42.1 C35.2 42.1 37.2 42.8 37.2 44.1 C37.2 45.8 35.2 47.5 32 47.5 Z" fill="#2b1a12"/>
+  <path d="M32 47.5 L32 51.5" stroke="#2b1a12" stroke-width="2" stroke-linecap="round"/>
+  <path d="M32 51.5 C29.5 54 26.5 53.6 25.4 52" stroke="#2b1a12" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M32 51.5 C34.5 54 37.5 53.6 38.6 52" stroke="#2b1a12" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>`;
+const SVG_FLAG = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="32" cy="54" rx="15" ry="4.5" fill="rgba(0,0,0,0.3)"/>
+  <rect x="29" y="9" width="4.5" height="45" rx="2.2" fill="#f5d76e"/>
+  <path d="M33.5 11 L55 19.5 L33.5 28 Z" fill="#ef4444"/>
+  <path d="M33.5 11 L55 19.5 L44 23.9 L33.5 15 Z" fill="#f87171"/>
+</svg>`;
+/* ---------- i18n ---------- */
+const I18N = {
+  fr:{
+    tagline:'CHICKEN MINES', start:'COMMENCER', resume:'JOUER', wallet:'CONNECT WALLET',
+    levelsTitle:'NIVEAUX', levelsSub:'Débusque les renards sans en réveiller un seul',
+    menu:'Menu', retour:'Retour', total:'Score total',
+    foxes:'RENARDS', time:'TEMPS', best:'RECORD',
+    statusFranc:'<b>Niveau 1</b> : gratuit pour tout le monde<br><b>Niveaux 2 à 12</b> : gratuits, réservés aux détenteurs de <b>$FRANC</b>',
+    statusNo:'<b>Niveau 1</b> : gratuit pour tout le monde<br><b>Niveaux 2 à 12</b> : gratuits, réservés aux détenteurs de <b>$FRANC</b>',
+    wConnected:'✅ Connecté', wNoFranc:'⚠️ Connecté — aucun $FRANC', wNotConnected:'Non connecté',
+    lockedTitle:'RÉSERVÉ AUX HOLDERS',
+    lockedLvl:'Ce niveau est réservé aux détenteurs de <b>$FRANC</b>.<br>Connecte ton wallet pour le débloquer !',
+    btnConnect:'👛 Connecter le wallet', btnClose:'Fermer',
+    gameOver:'RENARD !', goText:'Un renard s\'est jeté sur le poulailler...',
+    winTitle:'POULAILLER SAUVÉ !', winText:'Tous les renards sont repérés. Bravo Francis !',
+    replay:'Rejouer', toMenu:'Menu', toLevels:'Niveaux',
+    worlds:['🌿 Prairie','🏚 Poulailler','🌾 La Ferme','🌪 Chaos','👑 Légende'],
+    bonusFlag:'🚩 Mode drapeau', bonusDetect:'🔎 Flair', bonusMark:'🐔 Balise', bonusShield:'🛡 Bouclier',
+    newRecord:'🎉 Nouveau record !',
+    noticeGo:'C\'est parti !', noticeCalm:'Ouvre une case pour commencer',
+    noticeCare:'Attention, ça grouille de renards !',
+    noticeHard:'Les renards sont partout, réfléchis bien !',
+    noticeLegend:'Niveau légendaire : un seul faux pas et c\'est fini !',
+    noSafe:'Aucune case sûre à révéler', noFox:'Aucun renard à baliser',
+    shieldOn:'🛡 Bouclier actif : un renard te sera pardonné',
+    shieldSave:'🛡 Le bouclier t\'a sauvé du renard !',
+    bestScore:'Meilleur score', pts:'pts', foxesLeft:'renards',
+    lockedBonus:'Bonus débloqué à partir de'
+  },
+  en:{
+    tagline:'CHICKEN MINES', start:'START GAME', resume:'PLAY', wallet:'CONNECT WALLET',
+    levelsTitle:'LEVELS', levelsSub:'Find every fox without waking a single one',
+    menu:'Menu', retour:'Back', total:'Total score',
+    foxes:'FOXES', time:'TIME', best:'BEST',
+    statusFranc:'<b>Level 1</b>: free for everyone<br><b>Levels 2-12</b>: free, but only for <b>$FRANC</b> holders',
+    statusNo:'<b>Level 1</b>: free for everyone<br><b>Levels 2-12</b>: free, but only for <b>$FRANC</b> holders',
+    wConnected:'✅ Connected', wNoFranc:'⚠️ Connected — no $FRANC', wNotConnected:'Not connected',
+    lockedTitle:'HOLDERS ONLY',
+    lockedLvl:'This level is reserved for <b>$FRANC</b> holders.<br>Connect your wallet to unlock it!',
+    btnConnect:'👛 Connect wallet', btnClose:'Close',
+    gameOver:'FOX!', goText:'A fox jumped into the henhouse...',
+    winTitle:'HENHOUSE SAVED!', winText:'Every fox spotted. Well done Francis!',
+    replay:'Replay', toMenu:'Menu', toLevels:'Levels',
+    worlds:['🌿 Prairie','🏚 Henhouse','🌾 The Farm','🌪 Chaos','👑 Legend'],
+    bonusFlag:'🚩 Flag mode', bonusDetect:'🔎 Scent', bonusMark:'🐔 Beacon', bonusShield:'🛡 Shield',
+    newRecord:'🎉 New record!',
+    noticeGo:'Go!', noticeCalm:'Tap a tile to start',
+    noticeCare:'Careful, foxes everywhere!',
+    noticeHard:'Foxes all over the place, think twice!',
+    noticeLegend:'Legendary level: one wrong move and it\'s over!',
+    noSafe:'No safe tile to reveal', noFox:'No fox left to mark',
+    shieldOn:'🛡 Shield ready: one fox will be forgiven',
+    shieldSave:'🛡 The shield saved you from the fox!',
+    bestScore:'Best', pts:'pts', foxesLeft:'foxes',
+    lockedBonus:'Bonus unlocked from'
+  }
+};
+let lang = localStorage.getItem('flc_lang') || 'fr';
+function t(k){return I18N[lang][k];}
+
+/* ---------- Levels ----------
+   cols × rows grid, foxes = number of mines.
+   Density climbs from ~9% (Prairie) to ~22% (Légende). */
+const LEVELS = [
+  {id:1, world:0, holderOnly:false, cols:8,  rows:8,  foxes:8,  stars:'⭐'},
+  {id:2, world:0, holderOnly:true,  cols:8,  rows:9,  foxes:10, stars:'⭐'},
+  {id:3, world:0, holderOnly:true,  cols:8,  rows:10, foxes:12, stars:'⭐⭐'},
+  {id:4, world:1, holderOnly:true,  cols:9,  rows:11, foxes:15, stars:'⭐⭐'},
+  {id:5, world:1, holderOnly:true,  cols:9,  rows:12, foxes:18, stars:'⭐⭐'},
+  {id:6, world:1, holderOnly:true,  cols:10, rows:12, foxes:21, stars:'⭐⭐⭐'},
+  {id:7, world:2, holderOnly:true,  cols:10, rows:13, foxes:24, stars:'⭐⭐⭐'},
+  {id:8, world:2, holderOnly:true,  cols:10, rows:14, foxes:27, stars:'⭐⭐⭐⭐'},
+  {id:9, world:3, holderOnly:true,  cols:11, rows:14, foxes:30, stars:'⭐⭐⭐⭐'},
+  {id:10,world:3, holderOnly:true,  cols:11, rows:15, foxes:34, stars:'⭐⭐⭐⭐'},
+  {id:11,world:4, holderOnly:true,  cols:12, rows:16, foxes:41, stars:'⭐⭐⭐⭐⭐'},
+  {id:12,world:4, holderOnly:true,  cols:12, rows:16, foxes:46, stars:'⭐⭐⭐⭐⭐'},
+];
+const LEVEL_NAMES = {
+  fr:['Prairie','Prairie Animée','Prairie Expert','Premier Poulailler','Basse-cour','Grange Pleine','Les Champs','Le Verger','Chaos','Tempête','Roi du Poulailler','Nuit des Renards'],
+  en:['Prairie','Wild Prairie','Expert Prairie','First Henhouse','Farmyard','Full Barn','The Fields','The Orchard','Chaos','Storm','Henhouse King','Night of the Foxes']
+};
+
+/* ---------- Holder state (same logic as Chicken Snake) ---------- */
+let isHolder = JSON.parse(localStorage.getItem('flc_holder') || 'false');
+let francBalance = Number(localStorage.getItem('flc_balance') || 0);
+let unlockReason = localStorage.getItem('flc_reason') || null;
+let walletLinked = JSON.parse(localStorage.getItem('flc_walletLinked') || 'false');
+
+async function detectHolder(){
+  if(tg?.initData){
+    try{
+      const res=await fetch(BACKEND+'/check-franc',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({initData:tg.initData})
+      });
+      const d=await res.json();
+      walletLinked = !!(d && d.walletLinked);
+      isHolder = !!(d && (d.unlocked ?? (d.walletLinked && d.hasFranc)));
+      unlockReason = (d && d.reason) || (isHolder ? 'solana' : null);
+      francBalance = isHolder ? Number(d.balance || 0) : 0;
+      localStorage.setItem('flc_holder',JSON.stringify(isHolder));
+      localStorage.setItem('flc_balance',String(francBalance));
+      localStorage.setItem('flc_walletLinked',JSON.stringify(walletLinked));
+      localStorage.setItem('flc_reason', unlockReason || '');
+    }catch(e){/* keep cached */}
+  }
+  renderWalletStatus(); renderStatusBar(); renderLevelList();
+}
+
+function lockSvg(open){
+  if(open){
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 10V7a5 5 0 0 1 9.6-2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <rect x="4" y="10" width="14" height="10" rx="2.5" fill="#fff"/>
+      <circle cx="11" cy="14.5" r="1.6" fill="#15803d"/>
+      <rect x="10.2" y="14.5" width="1.6" height="3.2" rx="0.8" fill="#15803d"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    <rect x="4.5" y="10" width="15" height="10" rx="2.5" fill="#fff"/>
+    <circle cx="12" cy="14.5" r="1.6" fill="#b45309"/>
+    <rect x="11.2" y="14.5" width="1.6" height="3.2" rx="0.8" fill="#b45309"/></svg>`;
+}
+
+function renderWalletStatus(){
+  const sub=document.getElementById('walletSub');
+  const lock=document.getElementById('walletLock');
+  const btn=document.getElementById('btnWallet');
+  if(!sub||!lock||!btn)return;
+  btn.classList.remove('btn-wallet','btn-comp-green','btn-comp-orange');
+  if(isHolder){
+    lock.innerHTML=lockSvg(true);
+    btn.classList.add('btn-comp-green');
+    sub.className='wallet-sub ok';
+    if(unlockReason==='stars'){ sub.textContent='Unlocked via ⭐'; }
+    else { const sym=unlockReason==='ton'?'💎':'◎'; const bal=francBalance?Number(francBalance).toLocaleString():'?'; sub.textContent=`${t('wConnected')} ${sym} · ${bal} $FRANC`; }
+  } else if(walletLinked){
+    sub.className='wallet-sub warn'; sub.textContent=t('wNoFranc');
+    lock.innerHTML=lockSvg(false); btn.classList.add('btn-comp-orange');
+  } else {
+    sub.className='wallet-sub warn'; sub.textContent=t('wNotConnected');
+    lock.innerHTML=lockSvg(false); btn.classList.add('btn-comp-orange');
+  }
+}
+function renderStatusBar(){
+  const bar=document.getElementById('statusBar');
+  if(isHolder){ bar.className='status-bar franc'; bar.innerHTML=t('statusFranc'); }
+  else { bar.className='status-bar no-franc'; bar.innerHTML=t('statusNo'); }
+}
+function goConnectWallet(){ window.location.href=WALLET_PAGE; }
+
+/* ---------- Scores: best per level ---------- */
+let bestByLevel = JSON.parse(localStorage.getItem('flc_minesBest') || '{}');
+function getCumul(){ return Object.values(bestByLevel).reduce((a,b)=>a+(+b),0); }
+function saveBest(lvl,s){ if(s>(bestByLevel[lvl]||0)){ bestByLevel[lvl]=s; localStorage.setItem('flc_minesBest',JSON.stringify(bestByLevel)); return true;} return false; }
+function canPlay(l){ return !l.holderOnly || isHolder; }
+
+/* ---------- Screen management ---------- */
+const SCREENS=['screenMenu','screenLevels','screenGame'];
+function show(id){
+  SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
+  document.body.classList.toggle('playing', id==='screenGame');
+  if(id==='screenLevels'){ renderLevelList(); document.getElementById('totalScore').textContent=getCumul(); }
+  if(id!=='screenGame') stopGame();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Language ---------- */
+function setLang(l){
+  lang=l; localStorage.setItem('flc_lang',l);
+  document.getElementById('flagFR').classList.toggle('active', l==='fr');
+  document.getElementById('flagEN').classList.toggle('active', l==='en');
+  applyLang();
+}
+function applyLang(){
+  document.getElementById('tagline').textContent=t('tagline');
+  document.getElementById('lblResume').textContent=t('resume');
+  document.getElementById('lblWallet').textContent=t('wallet');
+  document.getElementById('levelsTitle').textContent=t('levelsTitle');
+  document.getElementById('levelsSub').textContent=t('levelsSub');
+  document.getElementById('backLevels').textContent=t('retour');
+  document.getElementById('backGame').textContent=t('menu');
+  document.getElementById('lblTotal').textContent=t('total');
+  renderWalletStatus(); renderStatusBar(); renderLevelList();
+}
+
+/* ---------- Level list ---------- */
+function renderLevelList(){
+  const list=document.getElementById('levelList');
+  list.innerHTML='';
+  let lastWorld=-1;
+  LEVELS.forEach((lv,i)=>{
+    if(lv.world!==lastWorld){
+      const sep=document.createElement('div');
+      sep.className='world-sep';
+      sep.textContent=t('worlds')[lv.world];
+      list.appendChild(sep);
+      lastWorld=lv.world;
+    }
+    const unlocked=canPlay(lv);
+    const best=bestByLevel[lv.id]||0;
+    const btn=document.createElement('button');
+    btn.className='lvl-btn '+(unlocked?'unlocked':'lockedb');
+    btn.innerHTML=`<span class="ll">
+        <span class="stars">${lv.stars}</span>
+        <span class="lvl-info">
+          <span class="lvl-name">${lv.id}. ${LEVEL_NAMES[lang][i]}</span>
+          <span class="lvl-best">🦊 ${lv.foxes} · ${lv.cols}×${lv.rows} · 🏅 ${t('bestScore')} : ${best} ${t('pts')}</span>
+        </span>
+      </span>
+      <span class="lk">${lockSvg(unlocked)}</span>`;
+    btn.onclick=()=>{ if(!unlocked){showLockModal();return;} startLevel(lv.id); };
+    list.appendChild(btn);
+  });
+}
+
+/* ---------- Modal ---------- */
+function showLockModal(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<img src="${IMG.triste}" alt="">
+    <h2 class="locked">🔒 ${t('lockedTitle')}</h2>
+    <p>${t('lockedLvl')}</p>
+    <button class="mbtn btn-wallet" onclick="goConnectWallet()">${t('btnConnect')}</button>
+    <button class="mbtn btn-purple" onclick="closeModal()">${t('btnClose')}</button>`;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+function toast(msg){
+  const el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2400);
+}
+function buzz(style){ try{ tg?.HapticFeedback?.impactOccurred(style||'light'); }catch(e){} }
+
+/* ============================================================
+   GAME ENGINE — Démineur
+   ============================================================ */
+const boardEl = document.getElementById('board');
+
+let lvlId=1;
+let COLS=8, ROWS=8, FOXES=6;
+let cells=[];        // {fox,n,rev,flag,el}
+let seeded=false;    // mines placed after the first reveal (first click is always safe)
+let running=false, finished=false;
+let revealedCount=0, flagCount=0;
+let startTime=0, elapsed=0, timerId=null;
+let flagMode=false;
+let bStock={detect:0,mark:0,shield:0};
+let shieldOn=false;
+
+function lcfg(){ return LEVELS.find(l=>l.id===lvlId); }
+const idx=(x,y)=>y*COLS+x;
+function neighbours(i){
+  const x=i%COLS, y=(i/COLS)|0, out=[];
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    if(!dx&&!dy) continue;
+    const nx=x+dx, ny=y+dy;
+    if(nx<0||ny<0||nx>=COLS||ny>=ROWS) continue;
+    out.push(idx(nx,ny));
+  }
+  return out;
+}
+
+function startLevel(id){
+  const lv=LEVELS.find(l=>l.id===id);
+  if(!canPlay(lv)){ showLockModal(); return; }
+  closeModal();
+  lvlId=id;
+  COLS=lv.cols; ROWS=lv.rows; FOXES=lv.foxes;
+
+  const cumul=getCumul();
+  bStock={ detect:cumul>=300?1:0, mark:cumul>=700?1:0, shield:cumul>=1200?1:0 };
+  shieldOn=false; flagMode=false;
+
+  cells=[]; seeded=false; finished=false; running=true;
+  revealedCount=0; flagCount=0; elapsed=0;
+  buildBoard();
+  fitBoard();
+  renderHUD(); renderBonus();
+
+  document.getElementById('gameLvl').textContent = t('worlds')[lv.world]+' · '+lv.id+'. '+LEVEL_NAMES[lang][lv.id-1];
+  show('screenGame');
+  fitBoard();
+
+  startTime=performance.now();
+  clearInterval(timerId);
+  timerId=setInterval(()=>{ if(!finished){ elapsed=(performance.now()-startTime)/1000; renderHUD(); } },250);
+
+  showLevelNotice(lv);
+}
+
+function stopGame(){ running=false; clearInterval(timerId); timerId=null; }
+function quitGame(){ stopGame(); show('screenLevels'); }
+
+function showLevelNotice(lv){
+  const density=lv.foxes/(lv.cols*lv.rows);
+  let msg;
+  if(lv.id>=11) msg=t('noticeLegend');
+  else if(density>=0.20) msg=t('noticeHard');
+  else if(density>=0.16) msg=t('noticeCare');
+  else msg=t('noticeCalm');
+  toast('🦊 '+msg);
+}
+
+/* ---------- Board build & layout ---------- */
+function buildBoard(){
+  boardEl.innerHTML='';
+  boardEl.style.gridTemplateColumns=`repeat(${COLS},1fr)`;
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<COLS*ROWS;i++){
+    const el=document.createElement('div');
+    el.className='cell';
+    el.dataset.i=i;
+    cells.push({fox:false,n:0,rev:false,flag:false,el});
+    frag.appendChild(el);
+  }
+  boardEl.appendChild(frag);
+}
+
+function fitBoard(){
+  const gap=3, pad=8;
+  const availW=Math.min(window.innerWidth-20,480);
+  // leave room for the top bar, hud and bonus bar
+  const availH=window.innerHeight-210;
+  const cw=(availW-pad*2-gap*(COLS-1))/COLS;
+  const ch=(availH-pad*2-gap*(ROWS-1))/ROWS;
+  const cell=Math.max(20,Math.floor(Math.min(cw,ch)));
+  const w=cell*COLS+gap*(COLS-1)+pad*2;
+  boardEl.style.width=w+'px';
+  boardEl.style.fontSize=Math.round(cell*0.62)+'px';
+}
+window.addEventListener('resize',()=>{ if(running) fitBoard(); });
+
+/* ---------- Mine seeding (first tap is always safe) ---------- */
+function seed(safeIdx){
+  const forbidden=new Set([safeIdx,...neighbours(safeIdx)]);
+  const total=COLS*ROWS;
+  // if the board is too tight to keep a full safe 3×3, only protect the tapped cell
+  const pool=[];
+  for(let i=0;i<total;i++){ if(!forbidden.has(i)) pool.push(i); }
+  const src = pool.length>=FOXES ? pool : Array.from({length:total},(_,i)=>i).filter(i=>i!==safeIdx);
+  for(let k=src.length-1;k>0;k--){ const j=(Math.random()*(k+1))|0; [src[k],src[j]]=[src[j],src[k]]; }
+  src.slice(0,FOXES).forEach(i=>{ cells[i].fox=true; });
+  for(let i=0;i<total;i++){
+    if(cells[i].fox){ cells[i].n=-1; continue; }
+    cells[i].n=neighbours(i).filter(j=>cells[j].fox).length;
+  }
+  seeded=true;
+}
+
+/* ---------- Painting ---------- */
+function paint(i){
+  const c=cells[i], el=c.el;
+  el.className='cell';
+  el.innerHTML='';
+  if(c.rev){
+    el.classList.add('rev');
+    if(c.fox){ el.classList.add('fox'); el.innerHTML=SVG_FOX; }
+    else if(c.n>0){ el.classList.add('n'+c.n); el.textContent=c.n; }
+  } else if(c.flag){
+    el.classList.add('flag'); el.innerHTML=SVG_FLAG;
+  }
+}
+function paintAll(){ for(let i=0;i<cells.length;i++) paint(i); }
+
+/* ---------- Reveal ---------- */
+function reveal(i){
+  const c=cells[i];
+  if(c.rev||c.flag) return;
+  if(!seeded) seed(i);
+  if(c.fox){
+    if(shieldOn){
+      shieldOn=false;
+      c.flag=true; flagCount++;
+      paint(i); renderHUD(); renderBonus();
+      toast(t('shieldSave')); buzz('heavy');
+      return;
+    }
+    c.rev=true; paint(i); c.el.classList.add('boom');
+    lose();
+    return;
+  }
+  // flood fill on empty cells
+  const stack=[i];
+  while(stack.length){
+    const k=stack.pop();
+    const cc=cells[k];
+    if(cc.rev||cc.flag||cc.fox) continue;
+    cc.rev=true; revealedCount++; paint(k);
+    if(cc.n===0) neighbours(k).forEach(j=>{ if(!cells[j].rev&&!cells[j].flag) stack.push(j); });
+  }
+  buzz('light');
+  checkWin();
+}
+
+/* chording: tap a number whose flags already match → open the rest */
+function chord(i){
+  const c=cells[i];
+  if(!c.rev||c.n<=0) return;
+  const nb=neighbours(i);
+  const flags=nb.filter(j=>cells[j].flag).length;
+  if(flags!==c.n) return;
+  nb.forEach(j=>{ if(!cells[j].flag&&!cells[j].rev) reveal(j); });
+}
+
+function toggleFlag(i){
+  const c=cells[i];
+  if(c.rev||finished) return;
+  c.flag=!c.flag;
+  flagCount+=c.flag?1:-1;
+  paint(i); renderHUD(); buzz('medium');
+}
+
+function checkWin(){
+  if(finished) return;
+  const safeTotal=COLS*ROWS-FOXES;
+  if(revealedCount>=safeTotal) win();
+}
+
+/* ---------- End of game ---------- */
+function lose(){
+  finished=true; stopGame();
+  cells.forEach((c,i)=>{
+    if(c.fox && !c.rev && !c.flag){ c.rev=true; paint(i); }
+    else if(!c.fox && c.flag){ c.el.className='cell wrong'; c.el.innerHTML=''; }
+  });
+  buzz('heavy');
+  setTimeout(()=>{
+    const m=document.getElementById('modal');
+    m.innerHTML=`<img src="${IMG.stupefait}" alt="">
+      <h2 class="lose">🦊 ${t('gameOver')}</h2>
+      <p>${t('goText')}</p>
+      <button class="mbtn btn-comp-green" onclick="startLevel(${lvlId})">${t('replay')}</button>
+      <button class="mbtn btn-purple" onclick="closeModal();show('screenLevels')">${t('toLevels')}</button>`;
+    document.getElementById('overlay').classList.add('show');
+  },700);
+}
+
+function scoreFor(lv,sec){
+  const base=lv.foxes*20;
+  const par=lv.foxes*8;                               // "par time" in seconds
+  const speed=Math.max(0,Math.round(base*(1-sec/par)));
+  return base+speed;
+}
+
+function win(){
+  finished=true;
+  elapsed=(performance.now()-startTime)/1000;
+  stopGame();
+  // auto-flag the foxes that are left
+  cells.forEach((c,i)=>{ if(c.fox&&!c.flag){ c.flag=true; flagCount++; paint(i); } });
+  renderHUD();
+  const lv=lcfg();
+  const sec=elapsed;
+  const sc=scoreFor(lv,sec);
+  const isRecord=saveBest(lv.id,sc);
+  buzz('heavy');
+  setTimeout(()=>{
+    const m=document.getElementById('modal');
+    const next=LEVELS.find(l=>l.id===lvlId+1);
+    const nextBtn = next
+      ? `<button class="mbtn btn-comp-green" onclick="startLevel(${next.id})">▶️ ${next.id}. ${LEVEL_NAMES[lang][next.id-1]}</button>`
+      : '';
+    m.innerHTML=`<img src="${IMG.coeur}" alt="">
+      <h2 class="win">🏆 ${t('winTitle')}</h2>
+      <p>${t('winText')}<br>⏱ ${fmtTime(sec)}</p>
+      <div class="modal-score">+${sc} ${t('pts')}</div>
+      ${isRecord?`<p style="margin-top:-8px">${t('newRecord')}</p>`:''}
+      ${nextBtn}
+      <button class="mbtn btn-purple" onclick="startLevel(${lvlId})">${t('replay')}</button>
+      <button class="mbtn btn-wallet" onclick="closeModal();show('screenLevels')">${t('toLevels')}</button>`;
+    document.getElementById('overlay').classList.add('show');
+  },500);
+}
+
+function fmtTime(s){
+  const m=Math.floor(s/60), r=Math.floor(s%60);
+  return m+':'+String(r).padStart(2,'0');
+}
+
+/* ---------- HUD ---------- */
+function renderHUD(){
+  const hud=document.getElementById('hud');
+  const best=bestByLevel[lvlId]||0;
+  hud.innerHTML=`
+    <div class="chip foxes"><span class="lab">${t('foxes')}</span><span class="num">🦊 ${FOXES-flagCount}</span></div>
+    <div class="chip time"><span class="lab">${t('time')}</span><span class="num">${fmtTime(elapsed)}</span></div>
+    <div class="chip best"><span class="lab">${t('best')}</span><span class="num">${best}</span></div>`;
+}
+
+/* ---------- Bonus bar ---------- */
+function renderBonus(){
+  const bar=document.getElementById('bonusBar');
+  bar.innerHTML='';
+  const mk=(label,cls,fn,enabled)=>{
+    const b=document.createElement('button');
+    b.className='bonus-btn'+(enabled?'':' used')+(cls?' '+cls:'');
+    b.textContent=label;
+    b.onclick=fn;
+    bar.appendChild(b);
+    return b;
+  };
+  mk(t('bonusFlag'), flagMode?'flagmode':'', ()=>{ flagMode=!flagMode; renderBonus(); }, true);
+  mk(t('bonusDetect'),'', useDetect, bStock.detect>0);
+  mk(t('bonusMark'),  '', useMark,   bStock.mark>0);
+  mk(t('bonusShield'),'', useShield, bStock.shield>0);
+}
+
+function useDetect(){
+  if(bStock.detect<1||finished) return;
+  if(!seeded){ reveal(((Math.random()*cells.length)|0)); bStock.detect--; renderBonus(); return; }
+  const pool=cells.map((c,i)=>i).filter(i=>!cells[i].fox&&!cells[i].rev&&!cells[i].flag);
+  if(!pool.length){ toast(t('noSafe')); return; }
+  const i=pool[(Math.random()*pool.length)|0];
+  bStock.detect--;
+  reveal(i);
+  cells[i].el.classList.add('hint');
+  renderBonus();
+}
+function useMark(){
+  if(bStock.mark<1||finished||!seeded) return;
+  const pool=cells.map((c,i)=>i).filter(i=>cells[i].fox&&!cells[i].flag&&!cells[i].rev);
+  if(!pool.length){ toast(t('noFox')); return; }
+  const i=pool[(Math.random()*pool.length)|0];
+  bStock.mark--;
+  toggleFlag(i);
+  cells[i].el.classList.add('hint');
+  renderBonus();
+}
+function useShield(){
+  if(bStock.shield<1||finished||shieldOn) return;
+  bStock.shield--; shieldOn=true;
+  toast(t('shieldOn'));
+  renderBonus();
+}
+
+/* ---------- Controls (tap / long-press / right-click) ---------- */
+let pressIdx=-1, pressTimer=null, longFired=false, pressXY=null;
+
+function cellIndexFromEvent(e){
+  const el=e.target.closest('.cell');
+  if(!el||!boardEl.contains(el)) return -1;
+  return +el.dataset.i;
+}
+
+boardEl.addEventListener('pointerdown',e=>{
+  if(finished||!running) return;
+  const i=cellIndexFromEvent(e);
+  if(i<0) return;
+  pressIdx=i; longFired=false; pressXY={x:e.clientX,y:e.clientY};
+  clearTimeout(pressTimer);
+  pressTimer=setTimeout(()=>{ longFired=true; toggleFlag(i); },420);
+});
+boardEl.addEventListener('pointermove',e=>{
+  if(pressIdx<0||!pressXY) return;
+  if(Math.hypot(e.clientX-pressXY.x,e.clientY-pressXY.y)>12){ clearTimeout(pressTimer); pressIdx=-1; }
+});
+boardEl.addEventListener('pointerup',e=>{
+  clearTimeout(pressTimer);
+  if(finished||!running){ pressIdx=-1; return; }
+  const i=cellIndexFromEvent(e);
+  if(i<0||i!==pressIdx){ pressIdx=-1; return; }
+  pressIdx=-1;
+  if(longFired){ longFired=false; return; }
+  const c=cells[i];
+  if(c.rev) chord(i);
+  else if(flagMode) toggleFlag(i);
+  else reveal(i);
+});
+boardEl.addEventListener('pointercancel',()=>{ clearTimeout(pressTimer); pressIdx=-1; });
+boardEl.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  if(finished||!running) return;
+  const i=cellIndexFromEvent(e);
+  if(i>=0) toggleFlag(i);
+});
+
+/* ---------- Init ---------- */
+function init(){
+  if(tg){try{tg.ready();tg.expand();}catch(e){}}
+  setLang(lang);
+  renderWalletStatus(); renderStatusBar(); renderLevelList();
+  detectHolder();
+}
+init();
+
+</script>
+</body>
+</html>
