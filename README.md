@@ -3,8 +3,12 @@
 **Démineur** aux couleurs de **Le Coq Francis** : les mines sont des **renards** 🦊 cachés
 autour du poulailler. Jouable dans le navigateur et lançable comme **Mini App Telegram**.
 
-- 🌐 **En ligne :** https://franclecoq.github.io/ChickenMines
-- 🤖 **Telegram :** https://t.me/FrancisLeCoqBot/ChickenMines
+- 🌐 **En ligne :** https://franclecoq.github.io/ChickenMines/
+- 🤖 **Telegram :** https://t.me/FrancisLeCoqBot/ChickenMine
+
+> ℹ️ Le nom court du mini app Telegram est `ChickenMine` (sans `s`), alors que le repo — et
+> donc l'URL GitHub Pages — est `ChickenMines`. C'est normal : l'URL configurée dans BotFather
+> doit pointer vers `https://franclecoq.github.io/ChickenMines/`, avec le `s`.
 
 ---
 
