@@ -29,22 +29,28 @@ Un seul renard réveillé → partie terminée.
 ## 🗺️ Niveaux
 
 12 niveaux répartis en 5 mondes, du poulailler tranquille à la nuit des renards.
-**Le niveau 1 est gratuit pour tout le monde ; les niveaux 2 à 12 sont réservés aux
-détenteurs de $FRANC** (même règle que Chicken Snake).
+**Prairie et Poulailler (niveaux 1 à 6) sont ouverts à tout le monde ; La Ferme, Chaos et
+Légende (niveaux 7 à 12) sont réservés aux détenteurs de $FRANC ou ⭐.**
 
-| Monde | Niveaux | Grille | Renards |
-|-------|---------|:------:|:-------:|
-| 🌿 Prairie | 1 – 3 | 8×8 → 8×10 | 8 → 12 |
-| 🏚 Poulailler | 4 – 6 | 9×11 → 10×12 | 15 → 21 |
-| 🌾 La Ferme | 7 – 8 | 10×13 → 10×14 | 24 → 27 |
-| 🌪 Chaos | 9 – 10 | 11×14 → 11×15 | 30 → 34 |
-| 👑 Légende | 11 – 12 | 12×16 | 41 → 46 |
+| Monde | Niveaux | Grille | Renards | Accès |
+|-------|---------|:------:|:-------:|-------|
+| 🌿 Prairie | 1 – 3 | 8×8 → 8×10 | 8 → 12 | Tous |
+| 🏚 Poulailler | 4 – 6 | 9×11 → 10×12 | 15 → 21 | Tous |
+| 🌾 La Ferme | 7 – 8 | 10×13 → 10×14 | 24 → 27 | 🔒 Holders / ⭐ |
+| 🌪 Chaos | 9 – 10 | 11×14 → 11×15 | 30 → 34 | 🔒 Holders / ⭐ |
+| 👑 Légende | 11 – 12 | 12×16 | 41 → 46 | 🔒 Holders / ⭐ |
 
-## 🏅 Score
+## 🏅 Records
 
-À la victoire : `renards × 20` points, plus un **bonus de vitesse** qui peut doubler la mise
-si tu termines bien en dessous du temps de référence (8 s par renard). Le **meilleur score de
-chaque niveau** est mémorisé, et leur somme forme le **score total**.
+Chaque niveau garde **deux records indépendants**, affichés sur sa carte dans la liste :
+
+- 🎖️ **Meilleur score** — à la victoire : `renards × 20` points, plus un **bonus de vitesse**
+  qui peut doubler la mise si tu termines bien en dessous du temps de référence (8 s par
+  renard). La somme des meilleurs scores forme le **score total**, qui débloque les bonus.
+- 🎖️ **Meilleur temps** — le chrono de ta meilleure partie gagnée sur ce niveau.
+
+Dès qu'un record tombe — le score, le temps, ou les deux — un grand **BRAVO** animé traverse
+l'écran avec confettis avant l'écran de victoire, et précise lequel des deux tu viens de battre.
 
 ## 🎁 Bonus
 
@@ -73,9 +79,10 @@ les autres jeux Francis).
 Un seul fichier `index.html` : aucune dépendance, aucun build. Le plateau est une grille DOM
 (pas de canvas), redimensionnée à l'écran pour tenir sans scroll sur mobile.
 
-Les visuels de Francis (`assets/coq_*.png`) sont repris de **Chicken Blast**, et le menu —
-CSS, en-tête, bouton wallet, barre de statut, liste de niveaux, modales, toasts — est repris
-de **Chicken Snake**. Le **renard** et le **drapeau** n'existaient dans aucun autre jeu :
+Les visuels de Francis (`assets/*.webp`, détourés sur fond transparent) sont repris de
+**Chicken Reflex** : `francis-default` au menu, `francis-happy` à la victoire, `francis-sad`
+à la défaite et `roi` sur les niveaux verrouillés. Le menu — CSS, en-tête, bouton wallet,
+barre de statut, modales, toasts — est repris de **Chicken Snake**. Le **renard** et le **drapeau** n'existaient dans aucun autre jeu :
 ce sont des SVG vectoriels dessinés pour ce jeu, intégrés directement dans le code.
 
 Le déblocage holder réutilise le même backend que les autres jeux Francis (`/check-franc` sur

@@ -5,6 +5,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Francis le Coq — Chicken Mines</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='54' font-size='56'>🦊</text></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka+One&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
@@ -127,23 +128,28 @@ body.playing #screenGame.card{
 .total-box{margin-top:12px; text-align:center; font-size:13px; color:var(--muted)}
 .total-box b{font-family:'Bangers',cursive; font-size:24px; color:var(--gold); letter-spacing:1px; display:block; margin-top:4px}
 
-/* LEVEL LIST */
+/* LEVEL LIST — one card per level: title, access line, then the two records */
 .lvl-btn{
-  width:100%; padding:15px 16px; border:none; border-radius:14px; margin-bottom:10px;
-  font-family:'Bangers',cursive; font-size:18px; letter-spacing:1.5px; color:#fff;
-  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
-  touch-action:manipulation; transition:transform .1s; position:relative;
+  width:100%; padding:14px 16px; border-radius:18px; margin-bottom:12px;
+  cursor:pointer; display:flex; flex-direction:column; align-items:stretch; gap:3px;
+  text-align:left; touch-action:manipulation; transition:transform .1s; position:relative;
+  font-family:'Fredoka One',cursive; color:#fff;
 }
-.lvl-btn:active{transform:scale(0.97)}
-.lvl-btn .ll{display:flex; align-items:center; gap:10px; text-align:left}
-.lvl-btn .lvl-info{display:flex; flex-direction:column; gap:2px}
-.lvl-btn .lvl-name{font-size:17px; line-height:1}
-.lvl-btn .lvl-best{font-family:'Fredoka One',cursive; font-size:10px; letter-spacing:0; color:rgba(255,255,255,0.75)}
-.lvl-btn .stars{font-size:12px; letter-spacing:1px}
-.lvl-btn.unlocked{background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 4px 18px rgba(22,163,74,0.4)}
-.lvl-btn.lockedb{background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 4px 18px rgba(217,119,6,0.35)}
-.lvl-btn .lk{font-size:18px; display:flex}
-.lvl-btn .lk svg{width:20px;height:20px;display:block}
+.lvl-btn:active{transform:scale(0.98)}
+.lvl-btn.unlocked{background:rgba(16,72,52,0.55); border:2px solid rgba(74,222,128,0.75); box-shadow:0 4px 20px rgba(22,163,74,0.25)}
+.lvl-btn.lockedb{background:rgba(76,44,10,0.5);  border:2px solid rgba(251,191,36,0.6); box-shadow:0 4px 20px rgba(217,119,6,0.2)}
+.lvl-btn .lvl-head{display:flex; align-items:center; gap:9px}
+.lvl-btn .stars{font-size:15px; letter-spacing:1px; flex:none}
+.lvl-btn .lvl-name{
+  font-family:'Fredoka One',cursive; font-size:19px; letter-spacing:.5px;
+  color:#fff; line-height:1.15; flex:1;
+}
+.lvl-btn .lk{display:flex; flex:none; opacity:.9}
+.lvl-btn .lk svg{width:22px;height:22px;display:block}
+.lvl-btn .lvl-meta{font-size:11.5px; color:var(--muted); letter-spacing:.2px; margin-bottom:5px}
+.lvl-btn .lvl-rec{font-size:13px; color:#e9d5ff; letter-spacing:.2px; line-height:1.5}
+.lvl-btn .lvl-rec b{font-family:'Bangers',cursive; font-size:19px; letter-spacing:1px; color:var(--green-l); font-weight:400}
+.lvl-btn.lockedb .lvl-rec b{color:var(--orange-l)}
 .world-sep{font-family:'Bangers',cursive; font-size:13px; letter-spacing:1px; color:var(--purple); margin:14px 0 8px; text-align:left; opacity:.85}
 .world-sep:first-child{margin-top:0}
 
@@ -240,6 +246,52 @@ body.playing #screenGame.card{
 }
 .modal .mbtn:active{transform:scale(0.96)}
 
+/* BRAVO — plays over everything when a record falls */
+.bravo{
+  position:fixed; inset:0; z-index:90; display:none;
+  align-items:center; justify-content:center; flex-direction:column;
+  pointer-events:none; overflow:hidden;
+}
+.bravo.show{display:flex; animation:bravoScrim 1.9s ease-out forwards}
+@keyframes bravoScrim{
+  0%{background:rgba(5,2,15,0)}
+  15%{background:rgba(5,2,15,.72)}
+  75%{background:rgba(5,2,15,.72)}
+  100%{background:rgba(5,2,15,0)}
+}
+.bravo::before{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at 50% 45%,rgba(255,215,0,0.30),transparent 62%);
+  animation:bravoFlash 1.9s ease-out forwards;
+}
+@keyframes bravoFlash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+.bravo-txt{
+  position:relative;
+  font-family:'Bangers',cursive; font-size:clamp(52px,19vw,120px); letter-spacing:5px;
+  background:linear-gradient(180deg,#fff8c9 5%,#FFD700 45%,#f59e0b 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,215,0,.75)) drop-shadow(0 5px 0 rgba(0,0,0,.35));
+  animation:bravoPop .55s cubic-bezier(.15,1.7,.4,1) both, bravoBeat 1s .55s ease-in-out 1;
+}
+@keyframes bravoPop{0%{transform:scale(.25) rotate(-16deg);opacity:0}60%{transform:scale(1.18) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(-2deg);opacity:1}}
+@keyframes bravoBeat{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.09) rotate(2deg)}}
+.bravo-sub{
+  position:relative; margin-top:6px; font-family:'Fredoka One',cursive;
+  font-size:15px; color:#fff; text-align:center; padding:0 24px; line-height:1.5;
+  text-shadow:0 2px 10px rgba(0,0,0,.7);
+  animation:bravoSub .5s .35s both;
+}
+@keyframes bravoSub{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.bravo-c{
+  position:absolute; top:48%; left:50%; font-size:26px;
+  animation:bravoConf 1.7s ease-out forwards;
+}
+@keyframes bravoConf{
+  0%{transform:translate(-50%,-50%) scale(.3) rotate(0deg); opacity:0}
+  12%{opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.1) rotate(var(--rot)); opacity:0}
+}
+
 /* TOAST */
 .toast{
   position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -256,7 +308,7 @@ body.playing #screenGame.card{
 <div class="app">
 
   <div class="brand">
-    <img alt="Francis" id="brandImg" src="assets/coq_pilote.png">
+    <img alt="Francis" id="brandImg" src="assets/francis-default.webp">
     <h1>FRANCIS<br>LE COQ</h1>
     <div class="tagline" id="tagline">CHICKEN MINES</div>
   </div>
@@ -308,14 +360,16 @@ body.playing #screenGame.card{
 <div class="overlay" id="overlay">
   <div class="modal" id="modal"></div>
 </div>
+<div class="bravo" id="bravo"></div>
 <div class="toast" id="toast"></div>
 
 <script>
+/* Visuels repris de Chicken Reflex : PNG/WebP détourés (fond transparent) */
 const IMG = {
-  pilote:    "assets/coq_pilote.png",
-  coeur:     "assets/coq_coeur.png",
-  stupefait: "assets/coq_stupefait.png",
-  triste:    "assets/coq_triste.png"
+  defaut: "assets/francis-default.webp",
+  happy:  "assets/francis-happy.webp",
+  sad:    "assets/francis-sad.webp",
+  roi:    "assets/roi.webp"
 };
 'use strict';
 /* ============================================================
@@ -358,8 +412,8 @@ const I18N = {
     levelsTitle:'NIVEAUX', levelsSub:'Débusque les renards sans en réveiller un seul',
     menu:'Menu', retour:'Retour', total:'Score total',
     foxes:'RENARDS', time:'TEMPS', best:'RECORD',
-    statusFranc:'<b>Niveau 1</b> : gratuit pour tout le monde<br><b>Niveaux 2 à 12</b> : gratuits, réservés aux détenteurs de <b>$FRANC</b>',
-    statusNo:'<b>Niveau 1</b> : gratuit pour tout le monde<br><b>Niveaux 2 à 12</b> : gratuits, réservés aux détenteurs de <b>$FRANC</b>',
+    statusFranc:'<b>Prairie</b> et <b>Poulailler</b> (niveaux 1 à 6) : ouverts à tous<br><b>La Ferme</b>, <b>Chaos</b> et <b>Légende</b> (niveaux 7 à 12) : réservés aux détenteurs de <b>$FRANC</b> ou ⭐',
+    statusNo:'<b>Prairie</b> et <b>Poulailler</b> (niveaux 1 à 6) : ouverts à tous<br><b>La Ferme</b>, <b>Chaos</b> et <b>Légende</b> (niveaux 7 à 12) : réservés aux détenteurs de <b>$FRANC</b> ou ⭐',
     wConnected:'✅ Connecté', wNoFranc:'⚠️ Connecté — aucun $FRANC', wNotConnected:'Non connecté',
     lockedTitle:'RÉSERVÉ AUX HOLDERS',
     lockedLvl:'Ce niveau est réservé aux détenteurs de <b>$FRANC</b>.<br>Connecte ton wallet pour le débloquer !',
@@ -377,16 +431,19 @@ const I18N = {
     noSafe:'Aucune case sûre à révéler', noFox:'Aucun renard à baliser',
     shieldOn:'🛡 Bouclier actif : un renard te sera pardonné',
     shieldSave:'🛡 Le bouclier t\'a sauvé du renard !',
-    bestScore:'Meilleur score', pts:'pts', foxesLeft:'renards',
-    lockedBonus:'Bonus débloqué à partir de'
+    bestScore:'Meilleur score', bestTime:'Meilleur temps', pts:'points',
+    openAll:'Ouvert à tous', holdersOnly:'Réservé aux holders $FRANC ou ⭐',
+    bravo:'BRAVO !',
+    recScore:'Nouveau record de score !', recTime:'Nouveau record de temps !',
+    recBoth:'Score ET temps battus !', noRec:'—'
   },
   en:{
     tagline:'CHICKEN MINES', start:'START GAME', resume:'PLAY', wallet:'CONNECT WALLET',
     levelsTitle:'LEVELS', levelsSub:'Find every fox without waking a single one',
     menu:'Menu', retour:'Back', total:'Total score',
     foxes:'FOXES', time:'TIME', best:'BEST',
-    statusFranc:'<b>Level 1</b>: free for everyone<br><b>Levels 2-12</b>: free, but only for <b>$FRANC</b> holders',
-    statusNo:'<b>Level 1</b>: free for everyone<br><b>Levels 2-12</b>: free, but only for <b>$FRANC</b> holders',
+    statusFranc:'<b>Prairie</b> and <b>Henhouse</b> (levels 1-6): open to everyone<br><b>The Farm</b>, <b>Chaos</b> and <b>Legend</b> (levels 7-12): for <b>$FRANC</b> holders or ⭐',
+    statusNo:'<b>Prairie</b> and <b>Henhouse</b> (levels 1-6): open to everyone<br><b>The Farm</b>, <b>Chaos</b> and <b>Legend</b> (levels 7-12): for <b>$FRANC</b> holders or ⭐',
     wConnected:'✅ Connected', wNoFranc:'⚠️ Connected — no $FRANC', wNotConnected:'Not connected',
     lockedTitle:'HOLDERS ONLY',
     lockedLvl:'This level is reserved for <b>$FRANC</b> holders.<br>Connect your wallet to unlock it!',
@@ -404,8 +461,11 @@ const I18N = {
     noSafe:'No safe tile to reveal', noFox:'No fox left to mark',
     shieldOn:'🛡 Shield ready: one fox will be forgiven',
     shieldSave:'🛡 The shield saved you from the fox!',
-    bestScore:'Best', pts:'pts', foxesLeft:'foxes',
-    lockedBonus:'Bonus unlocked from'
+    bestScore:'Best score', bestTime:'Best time', pts:'points',
+    openAll:'Open to everyone', holdersOnly:'$FRANC holders or ⭐ only',
+    bravo:'BRAVO!',
+    recScore:'New score record!', recTime:'New time record!',
+    recBoth:'Score AND time beaten!', noRec:'—'
   }
 };
 let lang = localStorage.getItem('flc_lang') || 'fr';
@@ -416,11 +476,11 @@ function t(k){return I18N[lang][k];}
    Density climbs from ~9% (Prairie) to ~22% (Légende). */
 const LEVELS = [
   {id:1, world:0, holderOnly:false, cols:8,  rows:8,  foxes:8,  stars:'⭐'},
-  {id:2, world:0, holderOnly:true,  cols:8,  rows:9,  foxes:10, stars:'⭐'},
-  {id:3, world:0, holderOnly:true,  cols:8,  rows:10, foxes:12, stars:'⭐⭐'},
-  {id:4, world:1, holderOnly:true,  cols:9,  rows:11, foxes:15, stars:'⭐⭐'},
-  {id:5, world:1, holderOnly:true,  cols:9,  rows:12, foxes:18, stars:'⭐⭐'},
-  {id:6, world:1, holderOnly:true,  cols:10, rows:12, foxes:21, stars:'⭐⭐⭐'},
+  {id:2, world:0, holderOnly:false, cols:8,  rows:9,  foxes:10, stars:'⭐'},
+  {id:3, world:0, holderOnly:false, cols:8,  rows:10, foxes:12, stars:'⭐⭐'},
+  {id:4, world:1, holderOnly:false, cols:9,  rows:11, foxes:15, stars:'⭐⭐'},
+  {id:5, world:1, holderOnly:false, cols:9,  rows:12, foxes:18, stars:'⭐⭐'},
+  {id:6, world:1, holderOnly:false, cols:10, rows:12, foxes:21, stars:'⭐⭐⭐'},
   {id:7, world:2, holderOnly:true,  cols:10, rows:13, foxes:24, stars:'⭐⭐⭐'},
   {id:8, world:2, holderOnly:true,  cols:10, rows:14, foxes:27, stars:'⭐⭐⭐⭐'},
   {id:9, world:3, holderOnly:true,  cols:11, rows:14, foxes:30, stars:'⭐⭐⭐⭐'},
@@ -502,10 +562,17 @@ function renderStatusBar(){
 }
 function goConnectWallet(){ window.location.href=WALLET_PAGE; }
 
-/* ---------- Scores: best per level ---------- */
+/* ---------- Records: best score AND best time per level ---------- */
 let bestByLevel = JSON.parse(localStorage.getItem('flc_minesBest') || '{}');
+let timeByLevel = JSON.parse(localStorage.getItem('flc_minesBestTime') || '{}');
 function getCumul(){ return Object.values(bestByLevel).reduce((a,b)=>a+(+b),0); }
 function saveBest(lvl,s){ if(s>(bestByLevel[lvl]||0)){ bestByLevel[lvl]=s; localStorage.setItem('flc_minesBest',JSON.stringify(bestByLevel)); return true;} return false; }
+/* time: lower is better, and a first completion always counts as a record */
+function saveBestTime(lvl,sec){
+  const prev=timeByLevel[lvl];
+  if(prev===undefined || sec<prev){ timeByLevel[lvl]=sec; localStorage.setItem('flc_minesBestTime',JSON.stringify(timeByLevel)); return true; }
+  return false;
+}
 function canPlay(l){ return !l.holderOnly || isHolder; }
 
 /* ---------- Screen management ---------- */
@@ -552,16 +619,18 @@ function renderLevelList(){
     }
     const unlocked=canPlay(lv);
     const best=bestByLevel[lv.id]||0;
+    const bt=timeByLevel[lv.id];
     const btn=document.createElement('button');
     btn.className='lvl-btn '+(unlocked?'unlocked':'lockedb');
-    btn.innerHTML=`<span class="ll">
+    btn.innerHTML=`
+      <span class="lvl-head">
         <span class="stars">${lv.stars}</span>
-        <span class="lvl-info">
-          <span class="lvl-name">${lv.id}. ${LEVEL_NAMES[lang][i]}</span>
-          <span class="lvl-best">🦊 ${lv.foxes} · ${lv.cols}×${lv.rows} · 🏅 ${t('bestScore')} : ${best} ${t('pts')}</span>
-        </span>
+        <span class="lvl-name">${lv.id}. ${LEVEL_NAMES[lang][i]}</span>
+        <span class="lk">${lockSvg(unlocked)}</span>
       </span>
-      <span class="lk">${lockSvg(unlocked)}</span>`;
+      <span class="lvl-meta">${lv.holderOnly?t('holdersOnly'):t('openAll')} · ${lv.cols}×${lv.rows} · 🦊 ${lv.foxes}</span>
+      <span class="lvl-rec">🎖️ ${t('bestScore')} : <b>${best}</b> ${t('pts')}</span>
+      <span class="lvl-rec">🎖️ ${t('bestTime')} : <b>${bt===undefined?t('noRec'):fmtTime(bt)}</b></span>`;
     btn.onclick=()=>{ if(!unlocked){showLockModal();return;} startLevel(lv.id); };
     list.appendChild(btn);
   });
@@ -570,7 +639,7 @@ function renderLevelList(){
 /* ---------- Modal ---------- */
 function showLockModal(){
   const m=document.getElementById('modal');
-  m.innerHTML=`<img src="${IMG.triste}" alt="">
+  m.innerHTML=`<img src="${IMG.roi}" alt="">
     <h2 class="locked">🔒 ${t('lockedTitle')}</h2>
     <p>${t('lockedLvl')}</p>
     <button class="mbtn btn-wallet" onclick="goConnectWallet()">${t('btnConnect')}</button>
@@ -779,7 +848,7 @@ function lose(){
   buzz('heavy');
   setTimeout(()=>{
     const m=document.getElementById('modal');
-    m.innerHTML=`<img src="${IMG.stupefait}" alt="">
+    m.innerHTML=`<img src="${IMG.sad}" alt="">
       <h2 class="lose">🦊 ${t('gameOver')}</h2>
       <p>${t('goText')}</p>
       <button class="mbtn btn-comp-green" onclick="startLevel(${lvlId})">${t('replay')}</button>
@@ -795,6 +864,24 @@ function scoreFor(lv,sec){
   return base+speed;
 }
 
+/* Big animated BRAVO — fires whenever a record falls (score, time, or both) */
+function showBravo(kind){
+  const el=document.getElementById('bravo');
+  const sub = kind==='both' ? t('recBoth') : kind==='time' ? t('recTime') : t('recScore');
+  const confetti=['🎉','🏅','⭐','🎊','🦊','🥇','✨','🐔'];
+  let parts='';
+  for(let k=0;k<14;k++){
+    const ang=(Math.PI*2*k)/14 + Math.random()*.4;
+    const dist=110+Math.random()*130;
+    parts+=`<span class="bravo-c" style="--dx:${Math.round(Math.cos(ang)*dist)}px;--dy:${Math.round(Math.sin(ang)*dist)}px;--rot:${Math.round(-180+Math.random()*360)}deg;animation-delay:${(Math.random()*.25).toFixed(2)}s">${confetti[k%confetti.length]}</span>`;
+  }
+  el.innerHTML=`${parts}<div class="bravo-txt">${t('bravo')}</div><div class="bravo-sub">${sub}</div>`;
+  el.classList.add('show');
+  buzz('heavy');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.classList.remove('show'); el.innerHTML=''; },1900);
+}
+
 function win(){
   finished=true;
   elapsed=(performance.now()-startTime)/1000;
@@ -805,24 +892,28 @@ function win(){
   const lv=lcfg();
   const sec=elapsed;
   const sc=scoreFor(lv,sec);
-  const isRecord=saveBest(lv.id,sc);
+  const scoreRec=saveBest(lv.id,sc);
+  const timeRec=saveBestTime(lv.id,sec);
+  const kind = scoreRec&&timeRec ? 'both' : timeRec ? 'time' : scoreRec ? 'score' : null;
   buzz('heavy');
+  if(kind) showBravo(kind);
   setTimeout(()=>{
     const m=document.getElementById('modal');
     const next=LEVELS.find(l=>l.id===lvlId+1);
     const nextBtn = next
       ? `<button class="mbtn btn-comp-green" onclick="startLevel(${next.id})">▶️ ${next.id}. ${LEVEL_NAMES[lang][next.id-1]}</button>`
       : '';
-    m.innerHTML=`<img src="${IMG.coeur}" alt="">
+    const recLine = kind==='both' ? t('recBoth') : kind==='time' ? t('recTime') : kind==='score' ? t('recScore') : '';
+    m.innerHTML=`<img src="${IMG.happy}" alt="">
       <h2 class="win">🏆 ${t('winTitle')}</h2>
-      <p>${t('winText')}<br>⏱ ${fmtTime(sec)}</p>
-      <div class="modal-score">+${sc} ${t('pts')}</div>
-      ${isRecord?`<p style="margin-top:-8px">${t('newRecord')}</p>`:''}
+      <p>${t('winText')}</p>
+      <div class="modal-score">🎖️ ${sc} ${t('pts')}<br>🎖️ ${fmtTime(sec)}</div>
+      ${recLine?`<p style="margin-top:-8px">🎉 ${recLine}</p>`:''}
       ${nextBtn}
       <button class="mbtn btn-purple" onclick="startLevel(${lvlId})">${t('replay')}</button>
       <button class="mbtn btn-wallet" onclick="closeModal();show('screenLevels')">${t('toLevels')}</button>`;
     document.getElementById('overlay').classList.add('show');
-  },500);
+  }, kind ? 1900 : 500);
 }
 
 function fmtTime(s){
@@ -834,10 +925,11 @@ function fmtTime(s){
 function renderHUD(){
   const hud=document.getElementById('hud');
   const best=bestByLevel[lvlId]||0;
+  const bt=timeByLevel[lvlId];
   hud.innerHTML=`
     <div class="chip foxes"><span class="lab">${t('foxes')}</span><span class="num">🦊 ${FOXES-flagCount}</span></div>
     <div class="chip time"><span class="lab">${t('time')}</span><span class="num">${fmtTime(elapsed)}</span></div>
-    <div class="chip best"><span class="lab">${t('best')}</span><span class="num">${best}</span></div>`;
+    <div class="chip best"><span class="lab">🎖️ ${t('best')}</span><span class="num">${best} · ${bt===undefined?t('noRec'):fmtTime(bt)}</span></div>`;
 }
 
 /* ---------- Bonus bar ---------- */
